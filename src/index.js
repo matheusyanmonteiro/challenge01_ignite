@@ -34,19 +34,21 @@ app.post('/users', (request, response) => {
     return response.status(400).json({error: "User already exist"});
   }
   
-  users.push({
+  const user = {
     name,
     username,
     id: uuidv4(),
     todos: []
-  });
+  };
 
-  return response.status(201).send();
+  users.push(user);
+
+
+  return response.status(201).json(user);
 });
 
 app.get('/todos', checksExistsUserAccount, (request, response) => {
   const { user } = request;
-
   return response.json(user.todos);
 });
 
@@ -56,25 +58,63 @@ app.post('/todos', checksExistsUserAccount, (request, response) => {
   const { user } = request;
 
   const todosOperation = { 
+    id: uuidv4(),
     title,
-    deadline
+    done: false,
+    deadline,
+    created_at: new Date(),
   };
 
   user.todos.push(todosOperation);
 
-  return response.status(201).send();
+  return response.status(201).json(todosOperation);
 });
 
 app.put('/todos/:id', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { title, deadline } = request.body;
+  const { id } = request.params;
+  const { user } = request;
+
+  const todo = user.todos.find((todo) => todo.id === id);
+
+  if(!todo)
+    return response.status(404).json({ error: "Todo not found." })
+
+  todo.title = title;
+  todo.deadline = deadline;
+
+  return response.status(200).json(todo);
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { id } = request.params;
+  const { user } = request;
+
+  const todo = user.todos.find((todo) => todo.id === id);
+
+  if(!todo){
+  return response.status(404).json({ error: "Todo not found." });
+  }
+    
+
+  todo.done = true;
+
+  return response.status(200).json(todo);
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (request, response) => {
-  // Complete aqui
+  const { id } = request.params;
+  const { user } = request;
+
+  const deleteTodo = user.todos.find((todo) => todo.id === id);
+
+  if(!deleteTodo){
+    return response.status(404).json({ error: "Todo not found." });
+  }
+    
+
+  user.todos.splice(deleteTodo.id, 1);
+  return response.status(204).json(user.todos);
 });
 
 module.exports = app;
